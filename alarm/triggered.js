@@ -15,6 +15,7 @@ module.exports = function(RED) {
         }
         this.timer = null;
         this.hasAlarmed = false;
+        this.trigger = null;
 
         /**
          * fire the alarm output
@@ -37,7 +38,7 @@ module.exports = function(RED) {
                 shape:  "dot",
                 text:   node._panel.alarmModes[node._panel.alarmState]
             });
-            node.send({payload: { alarm: true }});
+            node.send({payload: { alarm: true, trigger: node.trigger  }});
         }
 
         function clearAlarm() {
@@ -55,7 +56,7 @@ module.exports = function(RED) {
         node._panel && node._panel.registerStateListener(this, function(msg) {
             const SecuritySystemCurrentState = msg.payload.SecuritySystemCurrentState;
             const SecuritySystemAlarmType = msg.payload.SecuritySystemAlarmType;
-
+            node.trigger = msg.payload.trigger;
             //
             // alarm state
             //

@@ -193,12 +193,15 @@ module.exports = function(RED) {
             node.setAlarmState(newState !== undefined ? newState : node.alarmState);
             node.setAlarmType(alarmType);
 
+
+            var trigger = msg.payload.trigger;
             msg.payload = {
                 //SecuritySystemTargetState: global.SecuritySystemCurrentState,
                 SecuritySystemCurrentState: node.alarmState,
                 alarmState: node.alarmModes[node.alarmState]
             };
             msg.payload.isAlarm = node.isAlarm;
+            msg.payload.trigger = trigger;
 
             if (alarmChanged) {
                 msg.payload.SecuritySystemAlarmType = node.alarmType;

@@ -19,10 +19,15 @@ module.exports = function(RED) {
 
             node.status({ fill:"blue", shape:"dot", text:"trigger" });
 
+            var trigger = msg.payload.trigger;
             msg.payload = {
                 zone: "test",
-                modes: node.alarmStates
+                modes: node.alarmStates,
+                trigger:trigger
             };
+            if( trigger ){
+                msg.payload['trigger'] = trigger;
+            }
 
             if (node.resetTimer) {
                 clearTimeout(node.resetTimer);
