@@ -8,7 +8,6 @@ module.exports = function(RED) {
 
         this.format = parseInt(config.format || '0');
         this._panel = RED.nodes.getNode(config.panel);
-
         this.delay = typeof config.delay === 'string' ? parseInt( config.delay ) : 10;
         if (isNaN(this.delay)) {
             this.delay == 10;
@@ -20,25 +19,36 @@ module.exports = function(RED) {
         /**
          * fire the alarm output
          */
-        function emitAlarm() {
-            node.counter = node.counter - 1;
-            if (node.counter > 0) {
+        function emitAlarm( msg ) {
+
+
+             return function(){
+                node.counter = node.counter - 1;
+                if (node.counter > 0) {
+                    node.status({
+                        fill:   "grey",
+                        shape:  "dot",
+                        text:   "" + node.counter
+                    });
+                    node.timer = setTimeout(emitAlarm(msg), 1000);
+                    return;
+                }
+                node.timer = null;
+                node.hasAlarmed = true;
                 node.status({
-                    fill:   "grey",
+                    fill:   "red" ,
                     shape:  "dot",
-                    text:   "" + node.counter
+                    text:   node._panel.alarmModes[node._panel.alarmState]
                 });
-                node.timer = setTimeout(emitAlarm, 1000);
-                return;
+                var data =  {payload: { alarm: true }};
+
+                var sensorName = msg.payload.sensorName;
+                
+                if( sensorName ){
+                    data.payload.sensorName = sensorName;
+                }
+                node.send(data);
             }
-            node.timer = null;
-            node.hasAlarmed = true;
-            node.status({
-                fill:   "red" ,
-                shape:  "dot",
-                text:   node._panel.alarmModes[node._panel.alarmState]
-            });
-            node.send({payload: { alarm: true, trigger: node.trigger  }});
         }
 
         function clearAlarm() {
@@ -47,6 +57,9 @@ module.exports = function(RED) {
                 node.timer = null;
             }
             node.status({});
+            if( node.hasAlarmed ){
+                node.send({payload: { alarm: false }});
+            }
             node.hasAlarmed = false;
         }
 
@@ -56,7 +69,6 @@ module.exports = function(RED) {
         node._panel && node._panel.registerStateListener(this, function(msg) {
             const SecuritySystemCurrentState = msg.payload.SecuritySystemCurrentState;
             const SecuritySystemAlarmType = msg.payload.SecuritySystemAlarmType;
-            node.trigger = msg.payload.trigger;
             //
             // alarm state
             //
@@ -64,14 +76,14 @@ module.exports = function(RED) {
                 if (!node.timer && !node.hasAlarmed) {
                     node.counter = node.delay;
                     if (node.counter > 0) {
-                        node.timer = setTimeout(emitAlarm, 1000);
+                        node.timer = setTimeout(emitAlarm(msg), 1000);
                         node.status({
                             fill: "grey",
                             shape: "dot",
                             text: "" + node.counter
                         });
                     } else {
-                        emitAlarm();
+                        emitAlarm(msg)();
                     }
                 }
             } else {

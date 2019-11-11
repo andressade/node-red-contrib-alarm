@@ -11,6 +11,8 @@ module.exports = function(RED) {
         this._panel = RED.nodes.getNode(config.panel);
         this.alarmStates = JSON.parse("[" + config.alarmStates + "]");
 
+        this.name = config.name;
+
         this.resetTimer = null;
 
         node.on('input', function(msg) {
@@ -19,14 +21,13 @@ module.exports = function(RED) {
 
             node.status({ fill:"blue", shape:"dot", text:"trigger" });
 
-            var trigger = msg.payload.trigger;
+            var sensorName = msg.payload.sensorName || node.name;
             msg.payload = {
                 zone: "test",
                 modes: node.alarmStates,
-                trigger:trigger
             };
-            if( trigger ){
-                msg.payload['trigger'] = trigger;
+            if( sensorName ){
+                msg.payload['sensorName'] = sensorName;
             }
 
             if (node.resetTimer) {
